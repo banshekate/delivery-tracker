@@ -635,10 +635,12 @@ function showToast(msg) {
 // ════════════════════════════════════════════
 //  初始化
 // ════════════════════════════════════════════
-loadState();
-renderVendorGrid();
-updatePriceLabels();
-updateUrlBanner();
+window.addEventListener('load', function() {
+  loadState();
+  renderVendorGrid();
+  updatePriceLabels();
+  updateUrlBanner();
+});
 </script>
 </body>
 </html>
