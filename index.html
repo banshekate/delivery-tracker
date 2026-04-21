@@ -3,154 +3,345 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="送貨記錄">
-<meta name="mobile-web-app-capable" content="yes">
-<title>送貨記錄系統</title>
+<title>送貨記錄系統 V3</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
     --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
-    --coral: #D85A30; --coral-light: #FAECE7; --teal: #1D9E75; --teal-light: #E1F5EE;
-    --text: #1a1a1a; --text-muted: #6b6b6b; --border: rgba(0,0,0,0.1);
-    --bg: #f5f4f0; --card: #ffffff; --radius: 14px; --radius-sm: 8px;
+    --coral: #D85A30; --coral-light: #FAECE7; --teal: #1D9E75;
+    --teal-light: #E1F5EE; --text: #1a1a1a; --text-muted: #6b6b6b;
+    --border: rgba(0,0,0,0.1); --bg: #f5f4f0; --card: #ffffff;
+    --radius: 14px; --radius-sm: 8px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; background: var(--bg); font-family: -apple-system, sans-serif; color: var(--text); }
-  .app { display: flex; flex-direction: column; height: 100vh; max-width: 768px; margin: 0 auto; }
-  .topbar { background: var(--purple); color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+  body { background: var(--bg); font-family: -apple-system, sans-serif; color: var(--text); line-height: 1.4; }
+  .app { display: flex; flex-direction: column; min-height: 100vh; max-width: 600px; margin: 0 auto; }
+  .topbar { background: var(--purple); color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
   .sync-status { font-size: 12px; display: flex; align-items: center; gap: 5px; }
-  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #aaa; }
-  .sync-dot.ok { background: #6ee7b7; }
-  .content { flex: 1; overflow-y: auto; padding: 16px; }
-  .tabs { display: flex; background: var(--card); border-radius: var(--radius); padding: 5px; gap: 4px; margin-bottom: 16px; }
-  .tab { flex: 1; padding: 11px 4px; border: none; border-radius: 10px; background: transparent; font-size: 14px; color: var(--text-muted); cursor: pointer; }
-  .tab.active { background: var(--purple); color: #fff; }
-  .card { background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
-  .section-label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
-  .vendor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-  .vendor-btn { padding: 15px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); cursor: pointer; }
-  .vendor-btn.selected { background: var(--purple-light); border-color: var(--purple); color: var(--purple-dark); }
-  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .type-btn { padding: 20px 10px; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--bg); cursor: pointer; text-align: center; }
+  .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; opacity: 0.3; }
+  .sync-dot.ok { background: #6ee7b7; opacity: 1; }
+  .sync-dot.syncing { background: #fcd34d; opacity: 1; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .content { flex: 1; padding: 15px; }
+  .tabs { display: flex; background: var(--card); border-radius: var(--radius); padding: 5px; gap: 5px; margin-bottom: 15px; }
+  .tab { flex: 1; padding: 10px; border: none; border-radius: 10px; background: transparent; font-size: 14px; color: var(--text-muted); cursor: pointer; }
+  .tab.active { background: var(--purple); color: #fff; font-weight: bold; }
+  .card { background: var(--card); border-radius: var(--radius); padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+  .section-label { font-size: 13px; font-weight: bold; color: var(--text-muted); margin-bottom: 10px; }
+  .vendor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; }
+  .vendor-btn { padding: 12px 5px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); cursor: pointer; font-size: 14px; }
+  .vendor-btn.selected { background: var(--purple-light); border-color: var(--purple); color: var(--purple); font-weight: bold; }
+  .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .type-btn { padding: 15px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); cursor: pointer; text-align: center; }
   .type-btn.selected { border-color: var(--purple); background: var(--purple-light); }
-  .submit-btn { width: 100%; padding: 18px; background: var(--purple); color: #fff; border: none; border-radius: var(--radius); font-size: 18px; font-weight: 600; cursor: pointer; }
+  .qty-row { display: flex; align-items: center; gap: 15px; }
+  .qty-btn { width: 45px; height: 45px; border-radius: 10px; border: 1px solid #ddd; background: #fff; font-size: 20px; cursor: pointer; }
+  .qty-input { flex: 1; height: 45px; text-align: center; border: 1px solid var(--purple); border-radius: 10px; font-size: 18px; font-weight: bold; }
+  .submit-btn { width: 100%; padding: 15px; background: var(--purple); color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; }
   .submit-btn:disabled { background: #ccc; }
-  .record-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bg); }
-  .record-badge { padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: bold; }
-  .badge-large { background: var(--coral-light); color: var(--coral); }
-  .badge-small { background: var(--teal-light); color: var(--teal); }
-  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
-  .stat-card { background: var(--bg); padding: 10px; border-radius: 8px; text-align: center; }
-  .stat-val { font-size: 18px; font-weight: bold; }
+  .record-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+  .stat-card { background: #fff; padding: 10px; border-radius: 10px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  .stat-val { font-size: 18px; font-weight: bold; color: var(--purple); }
   .sum-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .sum-table th, .sum-table td { padding: 10px 5px; text-align: left; border-bottom: 1px solid var(--bg); }
-  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; opacity: 0; transition: 0.3s; pointer-events: none; }
+  .sum-table th, .sum-table td { padding: 10px 5px; border-bottom: 1px solid #eee; text-align: left; }
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 14px; opacity: 0; transition: 0.3s; pointer-events: none; }
   .toast.show { opacity: 1; }
   .page { display: none; }
   .page.active { display: block; }
+  .url-banner { background: #fffbeb; border: 1px solid #fcd34d; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
 </style>
 </head>
 <body>
+
 <div class="app">
   <div class="topbar">
-    <h1>📦 送貨記錄</h1>
-    <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">離線</span></div>
-  </div>
-  <div class="content">
-    <div class="tabs">
-      <button class="tab active" onclick="switchPage('record')">記錄</button>
-      <button class="tab" onclick="switchPage('list')">明細</button>
-      <button class="tab" onclick="switchPage('report')">月報</button>
-      <button class="tab" onclick="switchPage('settings')">設定</button>
+    <h1>📦 送貨記錄系統</h1>
+    <div class="sync-status">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">未連線</span>
     </div>
+  </div>
+
+  <div class="content">
+    <div id="url-banner" class="url-banner" style="display:none;">
+      <p style="font-size:12px; color:#92400e; margin-bottom:8px;">⚠️ 尚未設定 Google Sheets 連線，資料將僅存於手機</p>
+      <input type="text" id="script-url-input" style="width:100%; padding:8px; border:1px solid #fcd34d; border-radius:5px;" placeholder="貼上部署網址...">
+      <button onclick="saveUrl()" style="width:100%; margin-top:8px; background:#fcd34d; border:none; padding:8px; border-radius:5px; font-weight:bold;">儲存連線</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" onclick="showPage('record')">記錄</button>
+      <button class="tab" onclick="showPage('list')">明細</button>
+      <button class="tab" onclick="showPage('report')">月報</button>
+      <button class="tab" onclick="showPage('settings')">設定</button>
+    </div>
+
     <div id="page-record" class="page active">
-      <div class="card"><div class="section-label">選擇廠商</div><div class="vendor-grid" id="vendor-grid"></div></div>
-      <div class="card"><div class="section-label">貨件件數</div>
-        <div style="display:flex; gap:15px;"><button onclick="changeQty(-1)" style="width:50px;height:50px;font-size:20px">-</button>
-        <input type="number" id="input-qty" value="1" style="flex:1;text-align:center;font-size:20px" readonly>
-        <button onclick="changeQty(1)" style="width:50px;height:50px;font-size:20px">+</button></div>
+      <div class="card">
+        <div class="section-label">選擇廠商</div>
+        <div id="vendor-grid" class="vendor-grid"></div>
       </div>
-      <div class="card"><div class="section-label">貨件類型</div>
-        <div class="type-grid">
-          <button class="type-btn" id="btn-large" onclick="selectType('large')"><div>📦 大件</div><div id="label-large"></div></button>
-          <button class="type-btn" id="btn-small" onclick="selectType('small')"><div>📬 小件</div><div id="label-small"></div></button>
+      <div class="card">
+        <div class="section-label">件數</div>
+        <div class="qty-row">
+          <button class="qty-btn" onclick="addQty(-1)">-</button>
+          <input type="number" id="input-qty" class="qty-input" value="1" readonly>
+          <button class="qty-btn" onclick="addQty(1)">+</button>
         </div>
       </div>
-      <button class="submit-btn" id="submit-btn" onclick="submitRecord()" disabled>確認送達</button>
+      <div class="card">
+        <div class="section-label">規格</div>
+        <div class="type-grid">
+          <button id="btn-large" class="type-btn" onclick="setType('large')">
+            <div style="font-size:24px;">📦</div><div>大件</div><div id="p-large" style="font-size:12px;color:grey;"></div>
+          </button>
+          <button id="btn-small" class="type-btn" onclick="setType('small')">
+            <div style="font-size:24px;">📬</div><div>小件</div><div id="p-small" style="font-size:12px;color:grey;"></div>
+          </button>
+        </div>
+      </div>
+      <button id="submit-btn" class="submit-btn" onclick="doSubmit()" disabled>確認送出</button>
     </div>
-    <div id="page-list" class="page"><div class="card" id="list-card"></div></div>
+
+    <div id="page-list" class="page">
+      <div class="card" id="list-container"></div>
+    </div>
+
     <div id="page-report" class="page">
-      <div class="stat-grid" id="stat-grid"></div>
-      <div class="card" id="report-table"></div>
+      <div class="stat-grid" id="stat-summary"></div>
+      <div class="card">
+        <div class="section-label">廠商統計</div>
+        <div id="report-container"></div>
+        <button onclick="exportToExcel()" style="width:100%; margin-top:15px; padding:10px; background:var(--teal); color:#fff; border:none; border-radius:8px; font-weight:bold;">匯出 Excel 檔案</button>
+      </div>
     </div>
+
     <div id="page-settings" class="page">
-      <div class="card"><div class="section-label">廠商管理</div><div id="vendor-list"></div>
-        <div style="display:flex;gap:5px;margin-top:10px"><input id="new-vendor" style="flex:1;padding:8px"><button onclick="addVendor()">新增</button></div>
+      <div class="card">
+        <div class="section-label">運費設定</div>
+        <div style="margin-bottom:10px;">大件：<input type="number" id="set-p-large" style="width:80px;"> 元</div>
+        <div>小件：<input type="number" id="set-p-small" style="width:80px;"> 元</div>
+        <button onclick="saveSettings()" style="margin-top:10px; width:100%; padding:8px; background:var(--purple); color:#fff; border:none; border-radius:5px;">儲存運費</button>
       </div>
-      <div class="card"><div class="section-label">運費</div>
-        大件：<input type="number" id="price-large" style="width:80px"> 小件：<input type="number" id="price-small" style="width:80px">
-        <button onclick="savePrices()" style="margin-top:10px;width:100%;padding:8px">儲存運費</button>
+      <div class="card">
+        <div class="section-label">廠商管理</div>
+        <div id="vendor-manage-list"></div>
+        <div style="display:flex; gap:5px; margin-top:10px;">
+          <input type="text" id="new-vendor-name" style="flex:1; padding:8px;" placeholder="新廠商名稱">
+          <button onclick="addNewVendor()" style="padding:8px 15px; background:var(--teal); color:#fff; border:none; border-radius:5px;">新增</button>
+        </div>
       </div>
-      <div class="card"><div class="section-label">Google 網址</div><input id="script-url" style="width:100%;padding:8px" placeholder="貼上網址" onchange="saveUrl()"></div>
     </div>
   </div>
 </div>
+
 <div id="toast" class="toast"></div>
 
 <script>
-const S = { vendors: ['順豐','黑貓','大榮'], priceLarge: 200, priceSmall: 80, records: [], scriptUrl: '', selectedVendor: null, selectedType: null };
-function load(){ const r=localStorage.getItem('dev_v3'); if(r) Object.assign(S, JSON.parse(r)); }
-function save(){ localStorage.setItem('dev_v3', JSON.stringify(S)); }
-function switchPage(n){ 
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active', ['record','list','report','settings'][i]===n));
-  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+n));
-  if(n==='list') renderList(); if(n==='report') renderReport(); if(n==='settings') renderSettings();
+const S = {
+  vendors: ['順豐速運','黑貓宅急便','新竹物流','大榮貨運'],
+  priceLarge: 200, priceSmall: 80, records: [], scriptUrl: '',
+  selV: null, selT: null
+};
+
+// 初始化與儲存
+function init() {
+  const data = localStorage.getItem('delivery_app_data');
+  if (data) Object.assign(S, JSON.parse(data));
+  refreshUI();
 }
-function changeQty(a){ const i=document.getElementById('input-qty'); let v=parseInt(i.value)+a; i.value=v<1?1:v; }
-function renderVendorGrid(){ document.getElementById('vendor-grid').innerHTML=S.vendors.map(v=>`<button class="vendor-btn ${S.selectedVendor===v?'selected':''}" onclick="selectVendor('${v}')">${v}</button>`).join(''); }
-function selectVendor(v){ S.selectedVendor=v; renderVendorGrid(); check(); }
-function selectType(t){ S.selectedType=t; document.getElementById('btn-large').classList.toggle('selected', t==='large'); document.getElementById('btn-small').classList.toggle('selected', t==='small'); check(); }
-function check(){ document.getElementById('submit-btn').disabled=!(S.selectedVendor && S.selectedType); }
-async function submitRecord(){
-  const qty=parseInt(document.getElementById('input-qty').value);
-  const fee=(S.selectedType==='large'?S.priceLarge:S.priceSmall)*qty;
-  const r={ id:Date.now(), vendor:S.selectedVendor, type:S.selectedType, qty, fee, date:new Date().toISOString() };
-  S.records.push(r); save(); showToast('已記錄！');
-  S.selectedVendor=null; S.selectedType=null; document.getElementById('input-qty').value=1;
-  renderVendorGrid(); document.getElementById('btn-large').classList.remove('selected'); document.getElementById('btn-small').classList.remove('selected'); check();
-  if(S.scriptUrl) fetch(S.scriptUrl, {method:'POST', body:JSON.stringify({action:'addRecord', record:r}), headers:{'Content-Type':'text/plain'}}).catch(()=>{});
+function save() {
+  localStorage.setItem('delivery_app_data', JSON.stringify(S));
 }
-function renderList(){
-  const el=document.getElementById('list-card');
-  if(!S.records.length){ el.innerHTML='目前無記錄'; return; }
-  el.innerHTML=[...S.records].reverse().map(r=>`<div class="record-item"><span class="record-badge badge-${r.type}">${r.type==='large'?'大':'小'}x${r.qty}</span><div style="flex:1"><b>${r.vendor}</b></div><div>$${r.fee}</div><button onclick="del(${r.id})" style="margin-left:10px;border:none;background:none;color:#ccc">✕</button></div>`).join('');
+
+function refreshUI() {
+  document.getElementById('p-large').textContent = `$${S.priceLarge}/件`;
+  document.getElementById('p-small').textContent = `$${S.priceSmall}/件`;
+  document.getElementById('url-banner').style.display = S.scriptUrl ? 'none' : 'block';
+  if(S.scriptUrl) {
+    document.getElementById('sync-dot').className = 'sync-dot ok';
+    document.getElementById('sync-label').textContent = '已連線';
+  }
+  renderVendors();
 }
-function del(id){ S.records=S.records.filter(r=>r.id!==id); save(); renderList(); }
-function renderReport(){
+
+function renderVendors() {
+  const container = document.getElementById('vendor-grid');
+  container.innerHTML = S.vendors.map(v => 
+    `<button class="vendor-btn ${S.selV===v?'selected':''}" onclick="setVendor('${v}')">${v}</button>`
+  ).join('');
+}
+
+function setVendor(v) { S.selV = v; renderVendors(); checkBtn(); }
+function setType(t) { 
+  S.selT = t; 
+  document.getElementById('btn-large').className = 'type-btn' + (t==='large'?' selected':'');
+  document.getElementById('btn-small').className = 'type-btn' + (t==='small'?' selected':'');
+  checkBtn(); 
+}
+function addQty(n) {
+  const i = document.getElementById('input-qty');
+  let v = parseInt(i.value) + n;
+  i.value = v < 1 ? 1 : v;
+}
+function checkBtn() {
+  document.getElementById('submit-btn').disabled = !(S.selV && S.selT);
+}
+
+async function doSubmit() {
+  const qty = parseInt(document.getElementById('input-qty').value);
+  const price = S.selT === 'large' ? S.priceLarge : S.priceSmall;
+  const record = {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    vendor: S.selV,
+    type: S.selT,
+    qty: qty,
+    fee: price * qty
+  };
+
+  S.records.push(record);
+  save();
+  msg('✓ 記錄成功');
+  
+  // 重置介面
+  S.selV = null; S.selT = null;
+  document.getElementById('input-qty').value = 1;
+  document.getElementById('btn-large').className = 'type-btn';
+  document.getElementById('btn-small').className = 'type-btn';
+  renderVendors(); checkBtn();
+
+  // 同步至 Sheets
+  if (S.scriptUrl) {
+    document.getElementById('sync-dot').className = 'sync-dot syncing';
+    try {
+      await fetch(S.scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(record) });
+      document.getElementById('sync-dot').className = 'sync-dot ok';
+    } catch(e) {
+      document.getElementById('sync-dot').className = 'sync-dot err';
+    }
+  }
+}
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  event.target.classList.add('active');
+  
+  if (p === 'list') renderList();
+  if (p === 'report') renderReport();
+  if (p === 'settings') renderSettings();
+}
+
+function renderList() {
+  const container = document.getElementById('list-container');
+  if (S.records.length === 0) { container.innerHTML = '尚無資料'; return; }
+  
+  const html = [...S.records].reverse().map(r => `
+    <div class="record-item">
+      <div>
+        <div style="font-weight:bold;">${r.vendor}</div>
+        <div style="font-size:12px;color:grey;">${r.date.split('T')[0]} | ${r.type==='large'?'大':'小'} x ${r.qty}</div>
+      </div>
+      <div style="font-weight:bold;color:var(--purple);">$${r.fee}</div>
+    </div>
+  `).join('');
+  container.innerHTML = html;
+}
+
+function renderReport() {
   const now = new Date();
-  const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  const recs = S.records.filter(r => r.date.startsWith(currentMonth));
-  const totalFee = recs.reduce((a,b)=>a+b.fee, 0);
-  const totalQty = recs.reduce((a,b)=>a+b.qty, 0);
-  document.getElementById('stat-grid').innerHTML = `<div class="stat-card"><div>總額</div><div class="stat-val">$${totalFee}</div></div><div class="stat-card"><div>總件數</div><div class="stat-val">${totalQty}</div></div><div class="stat-card"><div>本月單數</div><div class="stat-val">${recs.length}</div></div>`;
-  const vendors = {};
-  recs.forEach(r => { if(!vendors[r.vendor]) vendors[r.vendor]={q:0, f:0}; vendors[r.vendor].q += r.qty; vendors[r.vendor].f += r.fee; });
-  let html = '<table class="sum-table"><tr><th>廠商</th><th>件數</th><th>金額</th></tr>';
-  for(let v in vendors) html += `<tr><td>${v}</td><td>${vendors[v].q}</td><td>$${vendors[v].f}</td></tr>`;
-  document.getElementById('report-table').innerHTML = html + '</table>';
+  const currentMonth = now.toISOString().substring(0, 7); // "2024-05"
+  
+  const thisMonthRecords = S.records.filter(r => r.date.startsWith(currentMonth));
+  
+  const totalFee = thisMonthRecords.reduce((sum, r) => sum + r.fee, 0);
+  const totalQty = thisMonthRecords.reduce((sum, r) => sum + r.qty, 0);
+  const count = thisMonthRecords.length;
+
+  document.getElementById('stat-summary').innerHTML = `
+    <div class="stat-card"><div style="font-size:12px;">本月金額</div><div class="stat-val">$${totalFee}</div></div>
+    <div class="stat-card"><div style="font-size:12px;">總件數</div><div class="stat-val">${totalQty}</div></div>
+    <div class="stat-card"><div style="font-size:12px;">記錄次數</div><div class="stat-val">${count}</div></div>
+  `;
+
+  // 廠商匯總
+  const vMap = {};
+  thisMonthRecords.forEach(r => {
+    if (!vMap[r.vendor]) vMap[r.vendor] = { qty: 0, fee: 0 };
+    vMap[r.vendor].qty += r.qty;
+    vMap[r.vendor].fee += r.fee;
+  });
+
+  let tableHtml = `<table class="sum-table"><tr><th>廠商</th><th>件數</th><th>金額</th></tr>`;
+  for (let v in vMap) {
+    tableHtml += `<tr><td>${v}</td><td>${vMap[v].qty}</td><td style="font-weight:bold;">$${vMap[v].fee}</td></tr>`;
+  }
+  tableHtml += `</table>`;
+  document.getElementById('report-container').innerHTML = Object.keys(vMap).length ? tableHtml : '本月尚無資料';
 }
-function renderSettings(){
-  document.getElementById('vendor-list').innerHTML = S.vendors.map(v=>`<div>${v} <button onclick="S.vendors=S.vendors.filter(x=>x!=='${v}');save();renderSettings()">刪除</button></div>`).join('');
-  document.getElementById('price-large').value=S.priceLarge; document.getElementById('price-small').value=S.priceSmall;
-  document.getElementById('script-url').value=S.scriptUrl;
+
+function renderSettings() {
+  document.getElementById('set-p-large').value = S.priceLarge;
+  document.getElementById('set-p-small').value = S.priceSmall;
+  document.getElementById('vendor-manage-list').innerHTML = S.vendors.map(v => 
+    `<div style="display:flex;justify-content:space-between;padding:5px 0;">
+      <span>${v}</span>
+      <button onclick="removeVendor('${v}')" style="color:red;border:none;background:none;">刪除</button>
+    </div>`
+  ).join('');
 }
-function addVendor(){ const v=document.getElementById('new-vendor').value; if(v){ S.vendors.push(v); save(); renderSettings(); document.getElementById('new-vendor').value=''; } }
-function savePrices(){ S.priceLarge=parseInt(document.getElementById('price-large').value); S.priceSmall=parseInt(document.getElementById('price-small').value); save(); showToast('已儲存'); }
-function saveUrl(){ S.scriptUrl=document.getElementById('script-url').value; save(); }
-function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
-window.onload=()=>{ load(); renderVendorGrid(); document.getElementById('label-large').textContent=`$${S.priceLarge}`; document.getElementById('label-small').textContent=`$${S.priceSmall}`; };
+
+function saveSettings() {
+  S.priceLarge = parseInt(document.getElementById('set-p-large').value);
+  S.priceSmall = parseInt(document.getElementById('set-p-small').value);
+  save(); refreshUI(); msg('已儲存');
+}
+
+function addNewVendor() {
+  const name = document.getElementById('new-vendor-name').value.trim();
+  if (name && !S.vendors.includes(name)) {
+    S.vendors.push(name); save(); renderSettings(); renderVendors();
+    document.getElementById('new-vendor-name').value = '';
+  }
+}
+function removeVendor(v) {
+  S.vendors = S.vendors.filter(i => i !== v);
+  save(); renderSettings(); renderVendors();
+}
+
+function saveUrl() {
+  const url = document.getElementById('script-url-input').value.trim();
+  if (url) { S.scriptUrl = url; save(); refreshUI(); msg('連線已設定'); }
+}
+
+function exportToExcel() {
+  if (S.records.length === 0) { msg('尚無資料可匯出'); return; }
+  
+  const data = S.records.map(r => ({
+    '日期': r.date.split('T')[0],
+    '廠商': r.vendor,
+    '類型': r.type === 'large' ? '大件' : '小件',
+    '件數': r.qty,
+    '金額': r.fee
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "送貨記錄");
+  XLSX.writeFile(wb, `送貨報表_${new Date().toLocaleDateString()}.xlsx`);
+}
+
+function msg(m) {
+  const t = document.getElementById('toast');
+  t.textContent = m; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+window.onload = init;
 </script>
+
 </body>
 </html>
