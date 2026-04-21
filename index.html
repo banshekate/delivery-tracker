@@ -11,308 +11,146 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root {
-    --purple: #534AB7;
-    --purple-light: #EEEDFE;
-    --purple-dark: #3C3489;
-    --coral: #D85A30;
-    --coral-light: #FAECE7;
-    --teal: #1D9E75;
-    --teal-light: #E1F5EE;
-    --text: #1a1a1a;
-    --text-muted: #6b6b6b;
-    --border: rgba(0,0,0,0.1);
-    --bg: #f5f4f0;
-    --card: #ffffff;
-    --success: #1D9E75;
-    --danger: #E24B4A;
-    --radius: 14px;
-    --radius-sm: 8px;
+    --purple: #534AB7; --purple-light: #EEEDFE; --purple-dark: #3C3489;
+    --coral: #D85A30; --coral-light: #FAECE7; --teal: #1D9E75; --teal-light: #E1F5EE;
+    --text: #1a1a1a; --text-muted: #6b6b6b; --border: rgba(0,0,0,0.1);
+    --bg: #f5f4f0; --card: #ffffff; --radius: 14px; --radius-sm: 8px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; background: var(--bg); font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; color: var(--text); }
+  html, body { height: 100%; background: var(--bg); font-family: -apple-system, sans-serif; color: var(--text); }
   .app { display: flex; flex-direction: column; height: 100vh; max-width: 768px; margin: 0 auto; }
-  .topbar { background: var(--purple); color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-  .topbar h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
-  .sync-status { font-size: 12px; display: flex; align-items: center; gap: 5px; opacity: 0.85; }
+  .topbar { background: var(--purple); color: #fff; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; }
+  .sync-status { font-size: 12px; display: flex; align-items: center; gap: 5px; }
   .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #aaa; }
   .sync-dot.ok { background: #6ee7b7; }
-  .sync-dot.syncing { background: #fcd34d; animation: pulse 1s infinite; }
-  .sync-dot.err { background: #f87171; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
   .content { flex: 1; overflow-y: auto; padding: 16px; }
-  .tabs { display: flex; background: var(--card); border-radius: var(--radius); padding: 5px; gap: 4px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-  .tab { flex: 1; padding: 11px 4px; border: none; border-radius: 10px; background: transparent; font-size: 14px; color: var(--text-muted); cursor: pointer; font-weight: 500; transition: all 0.18s; }
+  .tabs { display: flex; background: var(--card); border-radius: var(--radius); padding: 5px; gap: 4px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 11px 4px; border: none; border-radius: 10px; background: transparent; font-size: 14px; color: var(--text-muted); cursor: pointer; }
   .tab.active { background: var(--purple); color: #fff; }
   .card { background: var(--card); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
-  .section-label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 12px; }
+  .section-label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; }
   .vendor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
-  .vendor-btn { padding: 18px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); font-size: 15px; color: var(--text); cursor: pointer; text-align: center; font-weight: 500; transition: all 0.15s; min-height: 60px; display: flex; align-items: center; justify-content: center; }
-  .vendor-btn:active { transform: scale(0.96); }
+  .vendor-btn { padding: 15px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); background: var(--bg); cursor: pointer; }
   .vendor-btn.selected { background: var(--purple-light); border-color: var(--purple); color: var(--purple-dark); }
   .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  .type-btn { padding: 22px 12px; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--bg); cursor: pointer; text-align: center; transition: all 0.15s; }
-  .type-btn:active { transform: scale(0.97); }
-  .type-icon { font-size: 32px; margin-bottom: 6px; }
-  .type-name { font-size: 17px; font-weight: 600; }
-  .type-price { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
-  .type-btn.large.selected { background: var(--coral-light); border-color: var(--coral); }
-  .type-btn.large.selected .type-name { color: var(--coral); }
-  .type-btn.small.selected { background: var(--teal-light); border-color: var(--teal); }
-  .type-btn.small.selected .type-name { color: var(--teal); }
-  .submit-btn { width: 100%; padding: 18px; background: var(--purple); color: #fff; border: none; border-radius: var(--radius); font-size: 18px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: 0.5px; }
-  .submit-btn:active { transform: scale(0.98); background: var(--purple-dark); }
-  .submit-btn:disabled { background: #ccc; color: #888; cursor: not-allowed; }
-  .record-item { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--bg); }
-  .record-badge { padding: 4px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .type-btn { padding: 20px 10px; border: 1.5px solid var(--border); border-radius: var(--radius); background: var(--bg); cursor: pointer; text-align: center; }
+  .type-btn.selected { border-color: var(--purple); background: var(--purple-light); }
+  .submit-btn { width: 100%; padding: 18px; background: var(--purple); color: #fff; border: none; border-radius: var(--radius); font-size: 18px; font-weight: 600; cursor: pointer; }
+  .submit-btn:disabled { background: #ccc; }
+  .record-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--bg); }
+  .record-badge { padding: 3px 8px; border-radius: 99px; font-size: 11px; font-weight: bold; }
   .badge-large { background: var(--coral-light); color: var(--coral); }
   .badge-small { background: var(--teal-light); color: var(--teal); }
-  .record-vendor { font-size: 15px; font-weight: 600; flex: 1; }
-  .record-meta { font-size: 12px; color: var(--text-muted); }
-  .record-fee { font-size: 15px; font-weight: 600; color: var(--purple); }
-  .del-btn { background: none; border: none; font-size: 18px; color: #ccc; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
-  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
-  .stat-card { background: var(--bg); border-radius: var(--radius-sm); padding: 14px; text-align: center; }
-  .stat-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
-  .stat-val { font-size: 22px; font-weight: 700; color: var(--text); }
+  .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 15px; }
+  .stat-card { background: var(--bg); padding: 10px; border-radius: 8px; text-align: center; }
+  .stat-val { font-size: 18px; font-weight: bold; }
   .sum-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .sum-table th { text-align: left; padding: 10px 8px; color: var(--text-muted); font-size: 12px; border-bottom: 1.5px solid var(--bg); }
-  .sum-table td { padding: 12px 8px; border-bottom: 1px solid var(--bg); }
-  .fee-cell { font-weight: 700; color: var(--purple); }
-  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--bg); }
-  .add-row { display: flex; gap: 8px; margin-top: 12px; }
-  .add-input { flex: 1; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 15px; }
-  .add-btn, .save-btn { padding: 12px 18px; background: var(--purple); color: #fff; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; }
-  .price-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-  .price-input { width: 100px; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-weight: bold; text-align: right; }
-  .url-setup { background: #fffbeb; border: 1.5px solid #fcd34d; border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
-  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: #1a1a1a; color: #fff; padding: 13px 24px; border-radius: 99px; font-size: 15px; opacity: 0; transition: all 0.25s; z-index: 999; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .sum-table th, .sum-table td { padding: 10px 5px; text-align: left; border-bottom: 1px solid var(--bg); }
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); background: #333; color: #fff; padding: 10px 20px; border-radius: 20px; opacity: 0; transition: 0.3s; pointer-events: none; }
+  .toast.show { opacity: 1; }
   .page { display: none; }
   .page.active { display: block; }
-  .qty-btn { width: 50px; height: 50px; border-radius: 10px; border: 1px solid #ddd; font-size: 24px; background: #fff; cursor: pointer; }
 </style>
 </head>
 <body>
-
 <div class="app">
   <div class="topbar">
     <h1>📦 送貨記錄</h1>
-    <div class="sync-status">
-      <div class="sync-dot" id="sync-dot"></div>
-      <span id="sync-label">未設定</span>
-    </div>
+    <div class="sync-status"><div class="sync-dot" id="sync-dot"></div><span id="sync-label">離線</span></div>
   </div>
-
   <div class="content">
-    <div class="url-setup" id="url-setup-banner">
-      <p style="font-size:14px; color:#92400e; margin-bottom:10px;">⚙️ 請先設定 Google Sheets 連線網址</p>
-      <input class="add-input" id="url-banner-input" style="width:100%; border-color:#fcd34d" placeholder="貼上 Google Apps Script 網址..." />
-      <button class="save-btn" style="width:100%; margin-top:8px" onclick="saveUrlFromBanner()">儲存並連線</button>
-    </div>
-
     <div class="tabs">
-      <button class="tab active" onclick="switchPage('record')">記錄送貨</button>
-      <button class="tab" onclick="switchPage('list')">查詢</button>
+      <button class="tab active" onclick="switchPage('record')">記錄</button>
+      <button class="tab" onclick="switchPage('list')">明細</button>
       <button class="tab" onclick="switchPage('report')">月報</button>
       <button class="tab" onclick="switchPage('settings')">設定</button>
     </div>
-
     <div id="page-record" class="page active">
-      <div class="card">
-        <div class="section-label">選擇廠商</div>
-        <div class="vendor-grid" id="vendor-grid"></div>
+      <div class="card"><div class="section-label">選擇廠商</div><div class="vendor-grid" id="vendor-grid"></div></div>
+      <div class="card"><div class="section-label">貨件件數</div>
+        <div style="display:flex; gap:15px;"><button onclick="changeQty(-1)" style="width:50px;height:50px;font-size:20px">-</button>
+        <input type="number" id="input-qty" value="1" style="flex:1;text-align:center;font-size:20px" readonly>
+        <button onclick="changeQty(1)" style="width:50px;height:50px;font-size:20px">+</button></div>
       </div>
-
-      <div class="card">
-        <div class="section-label">貨件件數</div>
-        <div style="display: flex; align-items: center; gap: 15px;">
-          <button class="qty-btn" onclick="changeQty(-1)">-</button>
-          <input type="number" id="input-qty" value="1" min="1" style="flex:1; height:50px; text-align:center; font-size:20px; border-radius:10px; border:1.5px solid var(--purple); font-weight:bold;" readonly>
-          <button class="qty-btn" onclick="changeQty(1)">+</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <div class="section-label">貨件類型</div>
+      <div class="card"><div class="section-label">貨件類型</div>
         <div class="type-grid">
-          <button class="type-btn large" id="btn-large" onclick="selectType('large')">
-            <div class="type-icon">📦</div>
-            <div class="type-name">大件</div>
-            <div class="type-price" id="label-large">$200/件</div>
-          </button>
-          <button class="type-btn small" id="btn-small" onclick="selectType('small')">
-            <div class="type-icon">📬</div>
-            <div class="type-name">小件</div>
-            <div class="type-price" id="label-small">$80/件</div>
-          </button>
+          <button class="type-btn" id="btn-large" onclick="selectType('large')"><div>📦 大件</div><div id="label-large"></div></button>
+          <button class="type-btn" id="btn-small" onclick="selectType('small')"><div>📬 小件</div><div id="label-small"></div></button>
         </div>
       </div>
       <button class="submit-btn" id="submit-btn" onclick="submitRecord()" disabled>確認送達</button>
     </div>
-
-    <div id="page-list" class="page">
-      <div class="card" id="list-card"></div>
-    </div>
-
+    <div id="page-list" class="page"><div class="card" id="list-card"></div></div>
     <div id="page-report" class="page">
-      <div class="card" id="report-summary"></div>
+      <div class="stat-grid" id="stat-grid"></div>
       <div class="card" id="report-table"></div>
     </div>
-
     <div id="page-settings" class="page">
-      <div class="card">
-        <div class="section-label">廠商管理</div>
-        <div id="vendor-list"></div>
-        <div class="add-row">
-          <input class="add-input" id="new-vendor" placeholder="新增廠商" />
-          <button class="add-btn" onclick="addVendor()">新增</button>
-        </div>
+      <div class="card"><div class="section-label">廠商管理</div><div id="vendor-list"></div>
+        <div style="display:flex;gap:5px;margin-top:10px"><input id="new-vendor" style="flex:1;padding:8px"><button onclick="addVendor()">新增</button></div>
       </div>
-      <div class="card">
-        <div class="section-label">運費設定</div>
-        <div class="price-row"><label>大件 $</label><input type="number" id="price-large" class="price-input"></div>
-        <div class="price-row"><label>小件 $</label><input type="number" id="price-small" class="price-input"></div>
-        <button class="save-btn" style="width:100%" onclick="savePrices()">儲存運費</button>
+      <div class="card"><div class="section-label">運費</div>
+        大件：<input type="number" id="price-large" style="width:80px"> 小件：<input type="number" id="price-small" style="width:80px">
+        <button onclick="savePrices()" style="margin-top:10px;width:100%;padding:8px">儲存運費</button>
       </div>
+      <div class="card"><div class="section-label">Google 網址</div><input id="script-url" style="width:100%;padding:8px" placeholder="貼上網址" onchange="saveUrl()"></div>
     </div>
   </div>
 </div>
-<div class="toast" id="toast"></div>
+<div id="toast" class="toast"></div>
 
 <script>
-const S = {
-  vendors: ['順豐速運','黑貓宅急便','新竹物流','大榮貨運','台灣宅配通'],
-  priceLarge: 200, priceSmall: 80, records: [], scriptUrl: '',
-  selectedVendor: null, selectedType: null
-};
-
-function loadState() {
-  const raw = localStorage.getItem('delivery_v2');
-  if (raw) Object.assign(S, JSON.parse(raw));
+const S = { vendors: ['順豐','黑貓','大榮'], priceLarge: 200, priceSmall: 80, records: [], scriptUrl: '', selectedVendor: null, selectedType: null };
+function load(){ const r=localStorage.getItem('dev_v3'); if(r) Object.assign(S, JSON.parse(r)); }
+function save(){ localStorage.setItem('dev_v3', JSON.stringify(S)); }
+function switchPage(n){ 
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active', ['record','list','report','settings'][i]===n));
+  document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.id==='page-'+n));
+  if(n==='list') renderList(); if(n==='report') renderReport(); if(n==='settings') renderSettings();
 }
-function saveState() {
-  localStorage.setItem('delivery_v2', JSON.stringify(S));
+function changeQty(a){ const i=document.getElementById('input-qty'); let v=parseInt(i.value)+a; i.value=v<1?1:v; }
+function renderVendorGrid(){ document.getElementById('vendor-grid').innerHTML=S.vendors.map(v=>`<button class="vendor-btn ${S.selectedVendor===v?'selected':''}" onclick="selectVendor('${v}')">${v}</button>`).join(''); }
+function selectVendor(v){ S.selectedVendor=v; renderVendorGrid(); check(); }
+function selectType(t){ S.selectedType=t; document.getElementById('btn-large').classList.toggle('selected', t==='large'); document.getElementById('btn-small').classList.toggle('selected', t==='small'); check(); }
+function check(){ document.getElementById('submit-btn').disabled=!(S.selectedVendor && S.selectedType); }
+async function submitRecord(){
+  const qty=parseInt(document.getElementById('input-qty').value);
+  const fee=(S.selectedType==='large'?S.priceLarge:S.priceSmall)*qty;
+  const r={ id:Date.now(), vendor:S.selectedVendor, type:S.selectedType, qty, fee, date:new Date().toISOString() };
+  S.records.push(r); save(); showToast('已記錄！');
+  S.selectedVendor=null; S.selectedType=null; document.getElementById('input-qty').value=1;
+  renderVendorGrid(); document.getElementById('btn-large').classList.remove('selected'); document.getElementById('btn-small').classList.remove('selected'); check();
+  if(S.scriptUrl) fetch(S.scriptUrl, {method:'POST', body:JSON.stringify({action:'addRecord', record:r}), headers:{'Content-Type':'text/plain'}}).catch(()=>{});
 }
-
-function changeQty(amt) {
-  const input = document.getElementById('input-qty');
-  let val = parseInt(input.value) + amt;
-  if (val < 1) val = 1;
-  input.value = val;
+function renderList(){
+  const el=document.getElementById('list-card');
+  if(!S.records.length){ el.innerHTML='目前無記錄'; return; }
+  el.innerHTML=[...S.records].reverse().map(r=>`<div class="record-item"><span class="record-badge badge-${r.type}">${r.type==='large'?'大':'小'}x${r.qty}</span><div style="flex:1"><b>${r.vendor}</b></div><div>$${r.fee}</div><button onclick="del(${r.id})" style="margin-left:10px;border:none;background:none;color:#ccc">✕</button></div>`).join('');
 }
-
-function renderVendorGrid() {
-  document.getElementById('vendor-grid').innerHTML = S.vendors.map(v => 
-    `<button class="vendor-btn ${S.selectedVendor===v?'selected':''}" onclick="selectVendor('${v}')">${v}</button>`
-  ).join('');
+function del(id){ S.records=S.records.filter(r=>r.id!==id); save(); renderList(); }
+function renderReport(){
+  const now = new Date();
+  const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const recs = S.records.filter(r => r.date.startsWith(currentMonth));
+  const totalFee = recs.reduce((a,b)=>a+b.fee, 0);
+  const totalQty = recs.reduce((a,b)=>a+b.qty, 0);
+  document.getElementById('stat-grid').innerHTML = `<div class="stat-card"><div>總額</div><div class="stat-val">$${totalFee}</div></div><div class="stat-card"><div>總件數</div><div class="stat-val">${totalQty}</div></div><div class="stat-card"><div>本月單數</div><div class="stat-val">${recs.length}</div></div>`;
+  const vendors = {};
+  recs.forEach(r => { if(!vendors[r.vendor]) vendors[r.vendor]={q:0, f:0}; vendors[r.vendor].q += r.qty; vendors[r.vendor].f += r.fee; });
+  let html = '<table class="sum-table"><tr><th>廠商</th><th>件數</th><th>金額</th></tr>';
+  for(let v in vendors) html += `<tr><td>${v}</td><td>${vendors[v].q}</td><td>$${vendors[v].f}</td></tr>`;
+  document.getElementById('report-table').innerHTML = html + '</table>';
 }
-
-function selectVendor(v) { S.selectedVendor = v; renderVendorGrid(); checkSubmit(); }
-function selectType(t) { 
-  S.selectedType = t; 
-  document.getElementById('btn-large').classList.toggle('selected', t==='large');
-  document.getElementById('btn-small').classList.toggle('selected', t==='small');
-  checkSubmit(); 
+function renderSettings(){
+  document.getElementById('vendor-list').innerHTML = S.vendors.map(v=>`<div>${v} <button onclick="S.vendors=S.vendors.filter(x=>x!=='${v}');save();renderSettings()">刪除</button></div>`).join('');
+  document.getElementById('price-large').value=S.priceLarge; document.getElementById('price-small').value=S.priceSmall;
+  document.getElementById('script-url').value=S.scriptUrl;
 }
-function checkSubmit() { document.getElementById('submit-btn').disabled = !(S.selectedVendor && S.selectedType); }
-
-async function submitRecord() {
-  const qty = parseInt(document.getElementById('input-qty').value) || 1;
-  const unitPrice = S.selectedType === 'large' ? S.priceLarge : S.priceSmall;
-  const record = {
-    id: Date.now(), vendor: S.selectedVendor, type: S.selectedType,
-    qty: qty, fee: unitPrice * qty, date: new Date().toISOString()
-  };
-  S.records.push(record);
-  saveState();
-  showToast(`✓ 已記錄：${record.vendor} (${qty}件)`);
-  
-  // 重置
-  S.selectedVendor = null; S.selectedType = null;
-  document.getElementById('input-qty').value = 1;
-  renderVendorGrid();
-  document.getElementById('btn-large').classList.remove('selected');
-  document.getElementById('btn-small').classList.remove('selected');
-  checkSubmit();
-  apiCall({ action: 'addRecord', record });
-}
-
-function renderList() {
-  const el = document.getElementById('list-card');
-  if (!S.records.length) { el.innerHTML = '尚無記錄'; return; }
-  const sorted = [...S.records].sort((a,b) => b.id - a.id);
-  el.innerHTML = sorted.map(r => `
-    <div class="record-item">
-      <span class="record-badge badge-${r.type}">${r.type==='large'?'大件':'小件'} x ${r.qty}</span>
-      <div style="flex:1"><b>${r.vendor}</b><br><small>${r.date.split('T')[0]}</small></div>
-      <div class="record-fee">$${r.fee}</div>
-      <button class="del-btn" onclick="deleteRecord(${r.id})">✕</button>
-    </div>
-  `).join('');
-}
-
-async function deleteRecord(id) {
-  S.records = S.records.filter(r => r.id !== id);
-  saveState(); renderList();
-  apiCall({ action: 'deleteRecord', id });
-}
-
-function switchPage(name) {
-  document.querySelectorAll('.tab').forEach((b, i) => b.classList.toggle('active', ['record','list','report','settings'][i]===name));
-  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id==='page-'+name));
-  if(name==='list') renderList();
-  if(name==='settings') renderSettings();
-}
-
-function renderSettings() {
-  document.getElementById('vendor-list').innerHTML = S.vendors.map(v => `
-    <div class="setting-row"><span>${v}</span><button onclick="removeVendor('${v}')">刪除</button></div>
-  `).join('');
-  document.getElementById('price-large').value = S.priceLarge;
-  document.getElementById('price-small').value = S.priceSmall;
-}
-
-function addVendor() {
-  const v = document.getElementById('new-vendor').value.trim();
-  if (v && !S.vendors.includes(v)) { S.vendors.push(v); saveState(); renderSettings(); renderVendorGrid(); }
-  document.getElementById('new-vendor').value = '';
-}
-function removeVendor(v) { S.vendors = S.vendors.filter(x => x!==v); saveState(); renderSettings(); renderVendorGrid(); }
-function savePrices() {
-  S.priceLarge = parseInt(document.getElementById('price-large').value);
-  S.priceSmall = parseInt(document.getElementById('price-small').value);
-  saveState(); showToast('已儲存運費');
-}
-
-async function apiCall(p) {
-  if (!S.scriptUrl) return;
-  document.getElementById('sync-dot').className = 'sync-dot syncing';
-  try {
-    await fetch(S.scriptUrl, { method: 'POST', body: JSON.stringify(p), headers: { 'Content-Type': 'text/plain' } });
-    document.getElementById('sync-dot').className = 'sync-dot ok';
-    document.getElementById('sync-label').textContent = '已同步';
-  } catch(e) { document.getElementById('sync-dot').className = 'sync-dot err'; }
-}
-
-function saveUrlFromBanner() {
-  const url = document.getElementById('url-banner-input').value.trim();
-  if (url) { S.scriptUrl = url; saveState(); updateUrlBanner(); showToast('連線成功'); }
-}
-function updateUrlBanner() { 
-  document.getElementById('url-setup-banner').style.display = S.scriptUrl ? 'none' : 'block';
-  if(S.scriptUrl) { document.getElementById('sync-dot').className='sync-dot ok'; document.getElementById('sync-label').textContent='已連線'; }
-}
-
-function showToast(m) {
-  const t = document.getElementById('toast'); t.textContent = m; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
-}
-
-window.onload = function() {
-  loadState(); renderVendorGrid(); updateUrlBanner();
-  document.getElementById('label-large').textContent = `$${S.priceLarge}/件`;
-  document.getElementById('label-small').textContent = `$${S.priceSmall}/件`;
-};
+function addVendor(){ const v=document.getElementById('new-vendor').value; if(v){ S.vendors.push(v); save(); renderSettings(); document.getElementById('new-vendor').value=''; } }
+function savePrices(){ S.priceLarge=parseInt(document.getElementById('price-large').value); S.priceSmall=parseInt(document.getElementById('price-small').value); save(); showToast('已儲存'); }
+function saveUrl(){ S.scriptUrl=document.getElementById('script-url').value; save(); }
+function showToast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2000); }
+window.onload=()=>{ load(); renderVendorGrid(); document.getElementById('label-large').textContent=`$${S.priceLarge}`; document.getElementById('label-small').textContent=`$${S.priceSmall}`; };
 </script>
 </body>
 </html>
